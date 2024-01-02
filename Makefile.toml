@@ -1,0 +1,13 @@
+[config]
+# There are rich features that support workspace. I don't use it, so I disable it; if enabled, I get an error.
+# https://github.com/sagiegurari/cargo-make#disabling-workspace-support
+default_to_workspace = false
+# Do not load default tasks
+# https://github.com/sagiegurari/cargo-make#disabling-predefined-tasksflows
+skip_core_tasks = true
+
+[tasks.run]
+script = 'cargo run --bin ${@}'
+
+[tasks.test]
+script = 'cargo test'
