@@ -6,7 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+libc = "0.2.151"
+anyhow = "1.0.79"
 
-# [[bin]]
-# name = "cat"
-# path = "src/cat.rs"
+[dev-dependencies]
+assert_cmd = "2.0.12"
+
+[[bin]]
+name = "cat"
+path = "src/05/cat/main.rs"
