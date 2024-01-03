@@ -1,10 +1,9 @@
 use std::{
-    fs::{set_permissions, File, Permissions},
+    fs::{set_permissions, Permissions},
     os::unix::fs::PermissionsExt,
 };
 
 use assert_cmd::Command;
-use libc::chmod;
 
 #[test]
 fn test_cat_success() {

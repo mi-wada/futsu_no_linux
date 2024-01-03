@@ -3,13 +3,12 @@ use libc::{EACCES, ENOENT};
 
 fn main() -> Result<()> {
     let file_name = {
-        let mut args: Vec<String> = std::env::args().collect();
+        let args: Vec<String> = std::env::args().collect();
         if args.len() < 2 {
             return Err(anyhow!("Please specify a file name"));
         }
 
-        args.remove(0);
-        args.remove(0)
+        args.get(1).unwrap().clone()
     };
 
     cat(&file_name)
