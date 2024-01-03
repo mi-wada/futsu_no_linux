@@ -15,3 +15,7 @@ assert_cmd = "2.0.12"
 [[bin]]
 name = "cat"
 path = "src/05/cat/main.rs"
+
+[[bin]]
+name = "wc"
+path = "src/05/wc/main.rs"
