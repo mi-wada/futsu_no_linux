@@ -1,21 +1,24 @@
 use anyhow::{anyhow, Result};
-use libc::{EACCES, ENOENT};
+use libc::{EACCES, ENOENT, STDIN_FILENO};
 
 fn main() -> Result<()> {
     let file_name = {
         let args: Vec<String> = std::env::args().collect();
         if args.len() < 2 {
-            return Err(anyhow!("Please specify a file name"));
+            None
+        } else {
+            Some(args.get(1).unwrap().clone())
         }
-
-        args.get(1).unwrap().clone()
     };
 
     cat(&file_name)
 }
 
-fn cat(file_name: &str) -> Result<()> {
-    let fd = unsafe { libc::open(file_name.as_ptr() as _, libc::O_RDONLY) };
+fn cat(file_name: &Option<String>) -> Result<()> {
+    let fd = match file_name {
+        Some(file_name) => unsafe { libc::open(file_name.as_ptr() as _, libc::O_RDONLY) },
+        None => libc::STDIN_FILENO,
+    };
     if fd == -1 {
         match std::io::Error::last_os_error().raw_os_error().unwrap() {
             EACCES => return Err(anyhow!("No permission")),

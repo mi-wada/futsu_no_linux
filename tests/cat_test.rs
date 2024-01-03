@@ -6,7 +6,7 @@ use std::{
 use assert_cmd::Command;
 
 #[test]
-fn test_cat_success() {
+fn test_cat_success_file_specified() {
     let mut cmd = Command::cargo_bin("cat").unwrap();
     let assert = cmd.arg("tests/assets/cat/hello.txt").assert();
 
@@ -14,13 +14,11 @@ fn test_cat_success() {
 }
 
 #[test]
-fn test_cat_arg_missing() {
+fn test_cat_success_file_not_specified() {
     let mut cmd = Command::cargo_bin("cat").unwrap();
-    let assert = cmd.assert();
+    let assert = cmd.write_stdin("hogehoge\x1A").assert();
 
-    assert
-        .failure()
-        .stderr("Error: Please specify a file name\n");
+    assert.success().stdout("hogehoge\x1A");
 }
 
 #[test]
