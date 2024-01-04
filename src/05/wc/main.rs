@@ -1,17 +1,8 @@
-use std::result;
-
 use anyhow::{anyhow, Result};
-use libc::{write, EACCES, ENOENT};
+use libc::{EACCES, ENOENT};
 
 fn main() -> Result<()> {
-    let file_name = {
-        let args: Vec<String> = std::env::args().collect();
-        if args.len() < 2 {
-            None
-        } else {
-            Some(args.get(1).unwrap().clone())
-        }
-    };
+    let file_name = std::env::args().nth(1);
 
     wc(&file_name)
 }
