@@ -9,6 +9,7 @@ edition = "2021"
 libc = "0.2.151"
 anyhow = "1.0.79"
 tempfile = "3.9.0"
+regex = "1.10.2"
 
 [dev-dependencies]
 assert_cmd = "2.0.12"
@@ -36,3 +37,7 @@ path = "src/07/head/main.rs"
 [[bin]]
 name = "tail"
 path = "src/07/tail/main.rs"
+
+[[bin]]
+name = "grep"
+path = "src/08/grep/main.rs"
