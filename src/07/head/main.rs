@@ -3,8 +3,9 @@ use std::io::{self, BufRead, BufReader, Read};
 use anyhow::Result;
 
 fn main() -> Result<()> {
-    let line_count = std::env::args().nth(1).unwrap().parse()?;
-    let file_name = std::env::args().nth(2);
+    let mut args = std::env::args().skip(1);
+    let line_count = args.next().unwrap().parse()?;
+    let file_name = args.next();
 
     head(line_count, file_name)
 }
@@ -18,9 +19,9 @@ fn head(line_count: usize, file_name: Option<String>) -> Result<()> {
         BufReader::new(reader)
     };
 
-    for line in reader.lines().take(line_count) {
+    reader.lines().take(line_count).try_for_each(|line| {
         println!("{}", line?);
-    }
 
-    Ok(())
+        Ok(())
+    })
 }
