@@ -26,7 +26,9 @@ fn test_cat_no_libc_file_not_found() {
     let mut cmd = Command::cargo_bin("cat_no_libc").unwrap();
     let assert = cmd.arg("tests/assets/cat/notfound").assert();
 
-    assert.failure().stderr("Error: File not found\n");
+    assert
+        .failure()
+        .stderr("Error: No such file or directory (os error 2)\n");
 }
 
 #[test]
@@ -36,7 +38,9 @@ fn test_cat_no_libc_file_no_permission() {
 
     let mut cmd = Command::cargo_bin("cat_no_libc").unwrap();
     let assert = cmd.arg(no_permission_file_path).assert();
-    assert.failure().stderr("Error: No permission\n");
+    assert
+        .failure()
+        .stderr("Error: Permission denied (os error 13)\n");
 
     set_permissions(no_permission_file_path, Permissions::from_mode(0o444)).unwrap();
 }
