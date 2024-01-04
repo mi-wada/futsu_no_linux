@@ -1,11 +1,16 @@
-fn main() {
-    let args = {
-        let mut args: Vec<String> = std::env::args().collect();
-        args.remove(0);
-        args
-    };
+use std::io::Write;
 
-    for arg in args.iter() {
-        println!("{}", arg);
+use anyhow::Result;
+
+fn main() -> Result<()> {
+    // Write
+    // 1
+    // 2
+    // ...
+    // to TOOBIGFILE.txt
+    let mut file = std::fs::File::create("./TOOBIGFILE.txt")?;
+    for i in 1..=1000000 {
+        writeln!(file, "{}", i)?;
     }
+    Ok(())
 }

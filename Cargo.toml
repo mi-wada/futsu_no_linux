@@ -8,9 +8,14 @@ edition = "2021"
 [dependencies]
 libc = "0.2.151"
 anyhow = "1.0.79"
+tempfile = "3.9.0"
 
 [dev-dependencies]
 assert_cmd = "2.0.12"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
 
 [[bin]]
 name = "cat"
