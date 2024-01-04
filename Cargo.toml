@@ -27,3 +27,7 @@ path = "src/06/cat_no_libc/main.rs"
 [[bin]]
 name = "head"
 path = "src/07/head/main.rs"
+
+[[bin]]
+name = "tail"
+path = "src/07/tail/main.rs"
