@@ -15,3 +15,11 @@ fn test_success_stdio_big_line_count() {
 
     assert.success().stdout("1\n2\n3\n4\n5\n6\n\x1A\n");
 }
+
+#[test]
+fn test_success_file() {
+    let mut cmd = Command::cargo_bin("head").unwrap();
+    let assert = cmd.arg("5").arg("tests/assets/head/6lines.txt").assert();
+
+    assert.success().stdout("1\n2\n3\n4\n5\n");
+}
