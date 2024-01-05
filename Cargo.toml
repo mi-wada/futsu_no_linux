@@ -13,6 +13,7 @@ regex = "1.10.2"
 
 [dev-dependencies]
 assert_cmd = "2.0.12"
+rand = "0.8.5"
 
 [[bin]]
 name = "main"
@@ -45,3 +46,11 @@ path = "src/08/grep/main.rs"
 [[bin]]
 name = "ls"
 path = "src/10/ls/main.rs"
+
+[[bin]]
+name = "mkdir"
+path = "src/10/mkdir/main.rs"
+
+[[bin]]
+name = "rmdir"
+path = "src/10/rmdir/main.rs"

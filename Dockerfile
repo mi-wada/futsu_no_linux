@@ -12,7 +12,9 @@ RUN mkdir src && echo 'fn main() {}' > src/main.rs && \
     mkdir -p src/07/head && echo 'fn main() {}' > src/07/head/main.rs && \
     mkdir -p src/07/tail && echo 'fn main() {}' > src/07/tail/main.rs && \
     mkdir -p src/08/grep && echo 'fn main() {}' > src/08/grep/main.rs && \
-    mkdir -p src/10/ls && echo 'fn main() {}' > src/10/ls/main.rs
+    mkdir -p src/10/ls && echo 'fn main() {}' > src/10/ls/main.rs && \
+    mkdir -p src/10/mkdir && echo 'fn main() {}' > src/10/mkdir/main.rs && \
+    mkdir -p src/10/rmdir && echo 'fn main() {}' > src/10/rmdir/main.rs
 RUN cargo build
 
 COPY . .
