@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use libc::{opendir, readdir, ENOENT};
+use libc::{closedir, opendir, readdir, ENOENT};
 
 fn main() -> Result<()> {
     let dir_name = std::env::args().nth(1).unwrap();
@@ -30,6 +30,8 @@ fn ls(dir_name: &str) -> Result<()> {
             let name = std::ffi::CStr::from_ptr(name).to_str()?;
             println!("{}", name);
         }
+
+        closedir(dir);
     }
 
     Ok(())
