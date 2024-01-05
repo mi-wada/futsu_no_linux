@@ -41,3 +41,7 @@ path = "src/07/tail/main.rs"
 [[bin]]
 name = "grep"
 path = "src/08/grep/main.rs"
+
+[[bin]]
+name = "ls"
+path = "src/10/ls/main.rs"
