@@ -2,23 +2,22 @@ use std::fs::File;
 use std::io::{stdin, BufReader, Read, Write};
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::os::fd::FromRawFd;
+use std::str::FromStr;
 use std::{collections::HashMap, io::BufRead};
 
 use anyhow::{bail, Result};
 use libc::ENAMETOOLONG;
 
 fn main() -> Result<()> {
-    let file_name = std::env::args().nth(1);
+    let socket_fd = unsafe { libc::socket(libc::AF_INET, libc::SOCK_STREAM, 0) };
+    if socket_fd < 0 {
+        panic!("Failed to create socket");
+    }
 
     let fd = {
-        let socket_fd = unsafe { libc::socket(libc::AF_INET, libc::SOCK_STREAM, 0) };
-        if socket_fd < 0 {
-            panic!("Failed to create socket");
-        }
-
-        let mut addr = libc::sockaddr_in {
+        let addr = libc::sockaddr_in {
             sin_family: libc::AF_INET as libc::sa_family_t,
-            sin_port: 8082_u16.to_be(),
+            sin_port: 8088_u16.to_be(),
             sin_addr: libc::in_addr {
                 s_addr: libc::INADDR_ANY,
             },
@@ -75,27 +74,25 @@ fn main() -> Result<()> {
     };
     let mut stream = { BufReader::new(unsafe { std::fs::File::from_raw_fd(fd) }) };
 
-    // let mut stream = BufReader::new(match file_name {
-    //     Some(file_name) => File::open(file_name)?,
-    //     None => {
-    //         let reader = stdin();
-
-    //         let mut tempfile = tempfile::tempfile()?;
-    //         for line in reader.lines() {
-    //             let line = line? + "\n";
-    //             tempfile.write_all(line.as_bytes())?;
-    //         }
-
-    //         tempfile.flush()?;
-    //         tempfile
-    //     }
-    // });
-
     let http_request = parse_http_request(&mut stream)?;
 
     println!("{:?}", http_request);
 
-    // println!("got client fd: {}", fd);
+    let body = BufReader::new(File::open(format!("src/16/www{}", http_request.path))?);
+    let mut response = HttpResponse {
+        http_version: http_request.http_version,
+        content_length: 56,
+        content_type: ContentType::HTML,
+        connection: "close".into(),
+        body: Box::new(body),
+    };
+    let bytes = response.to_bytes();
+    unsafe { libc::write(fd, bytes.as_ptr() as _, bytes.len()) };
+
+    unsafe {
+        libc::close(socket_fd);
+        libc::close(fd);
+    };
 
     Ok(())
 }
@@ -125,15 +122,25 @@ enum HttpVersion {
     V3,
 }
 
-impl TryFrom<&str> for HttpVersion {
-    type Error = anyhow::Error;
+impl FromStr for HttpVersion {
+    type Err = anyhow::Error;
 
-    fn try_from(value: &str) -> Result<Self> {
+    fn from_str(value: &str) -> Result<Self> {
         match value {
             "HTTP/1.1" => Ok(HttpVersion::V1_1),
             "HTTP/2" => Ok(HttpVersion::V2),
             "HTTP/3" => Ok(HttpVersion::V3),
             _ => bail!("Invalid HTTP Version"),
+        }
+    }
+}
+
+impl HttpVersion {
+    fn to_string(&self) -> String {
+        match self {
+            Self::V1_1 => "HTTP/1.1".into(),
+            Self::V2 => "HTTP/2".into(),
+            Self::V3 => "HTTP/3".into(),
         }
     }
 }
@@ -249,7 +256,7 @@ fn parse_request_line(s: &str) -> Result<(HttpMethod, String, HttpVersion)> {
 
     let method = HttpMethod::try_from(splited.next().unwrap())?;
     let path = splited.next().unwrap().into();
-    let http_version = HttpVersion::try_from(splited.next().unwrap())?;
+    let http_version = HttpVersion::from_str(splited.next().unwrap())?;
 
     Ok((method, path, http_version))
 }
@@ -268,6 +275,48 @@ fn parse_header_line(s: &str) -> Result<(String, String)> {
     };
 
     Ok((key, value))
+}
+
+enum ContentType {
+    HTML,
+    JSON,
+}
+
+impl Into<&str> for ContentType {
+    fn into(self) -> &'static str {
+        match self {
+            Self::HTML => "text/html",
+            Self::JSON => "application/json",
+        }
+    }
+}
+
+struct HttpResponse {
+    http_version: HttpVersion,
+    content_length: usize,
+    content_type: ContentType,
+    connection: String,
+    body: Box<dyn BufRead>,
+}
+
+impl HttpResponse {
+    fn to_bytes(&mut self) -> Vec<u8> {
+        let body = {
+            let mut body = vec![];
+            self.body.read_to_end(&mut body);
+            body
+        };
+
+        let mut res = (format!("{} 200 OK\r\n", self.http_version.to_string())
+            + &format!("Content-length: {}\r\n", body.len())
+            + &format!("Content-Type: {}\r\n", "text/html")
+            + &format!("Connection: {}\r\n", "close")
+            + &format!("\r\n"))
+            .into_bytes();
+        res.extend(body);
+
+        res
+    }
 }
 
 #[cfg(test)]
