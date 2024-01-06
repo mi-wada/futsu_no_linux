@@ -54,3 +54,7 @@ path = "src/10/mkdir/main.rs"
 [[bin]]
 name = "rmdir"
 path = "src/10/rmdir/main.rs"
+
+[[bin]]
+name = "16_http_server"
+path = "src/16/http_server/main.rs"
