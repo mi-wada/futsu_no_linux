@@ -1,31 +1,101 @@
 use std::fs::File;
 use std::io::{stdin, BufReader, Read, Write};
+use std::net::{Ipv4Addr, Ipv6Addr};
+use std::os::fd::FromRawFd;
 use std::{collections::HashMap, io::BufRead};
 
 use anyhow::{bail, Result};
+use libc::ENAMETOOLONG;
 
 fn main() -> Result<()> {
     let file_name = std::env::args().nth(1);
 
-    let mut stream = BufReader::new(match file_name {
-        Some(file_name) => File::open(file_name)?,
-        None => {
-            let reader = stdin();
-
-            let mut tempfile = tempfile::tempfile()?;
-            for line in reader.lines() {
-                let line = line? + "\n";
-                tempfile.write_all(line.as_bytes())?;
-            }
-
-            tempfile.flush()?;
-            tempfile
+    let fd = {
+        let socket_fd = unsafe { libc::socket(libc::AF_INET, libc::SOCK_STREAM, 0) };
+        if socket_fd < 0 {
+            panic!("Failed to create socket");
         }
-    });
+
+        let mut addr = libc::sockaddr_in {
+            sin_family: libc::AF_INET as libc::sa_family_t,
+            sin_port: 8082_u16.to_be(),
+            sin_addr: libc::in_addr {
+                s_addr: libc::INADDR_ANY,
+            },
+            sin_zero: [0; 8],
+            sin_len: std::mem::size_of::<libc::sockaddr_in>() as u8,
+        };
+        if unsafe {
+            libc::bind(
+                socket_fd,
+                &addr as *const _ as *const libc::sockaddr,
+                std::mem::size_of::<libc::sockaddr_in>() as libc::socklen_t,
+            )
+        } < 0
+        {
+            unsafe {
+                libc::close(socket_fd);
+            }
+            println!(
+                "error_code: {}",
+                std::io::Error::last_os_error().raw_os_error().unwrap()
+            );
+            panic!("Failed to bind");
+        }
+
+        if unsafe { libc::listen(socket_fd, 5) } < 0 {
+            unsafe { libc::close(socket_fd) };
+            panic!("Failed to listen");
+        }
+
+        let mut client_addr = libc::sockaddr_in {
+            sin_family: libc::AF_INET as libc::sa_family_t,
+            sin_port: 0,
+            sin_addr: libc::in_addr {
+                s_addr: libc::INADDR_ANY,
+            },
+            sin_zero: [0; 8],
+            sin_len: std::mem::size_of::<libc::sockaddr_in>() as u8,
+        };
+        let mut client_addr_size = std::mem::size_of::<libc::sockaddr_in>() as libc::socklen_t;
+
+        let client_fd = unsafe {
+            libc::accept(
+                socket_fd,
+                &mut client_addr as *mut _ as *mut libc::sockaddr,
+                &mut client_addr_size as *mut libc::socklen_t,
+            )
+        };
+        if client_fd < 0 {
+            unsafe { libc::close(socket_fd) };
+            panic!("Failed to accept connection");
+        }
+
+        client_fd
+    };
+    let mut stream = { BufReader::new(unsafe { std::fs::File::from_raw_fd(fd) }) };
+
+    // let mut stream = BufReader::new(match file_name {
+    //     Some(file_name) => File::open(file_name)?,
+    //     None => {
+    //         let reader = stdin();
+
+    //         let mut tempfile = tempfile::tempfile()?;
+    //         for line in reader.lines() {
+    //             let line = line? + "\n";
+    //             tempfile.write_all(line.as_bytes())?;
+    //         }
+
+    //         tempfile.flush()?;
+    //         tempfile
+    //     }
+    // });
 
     let http_request = parse_http_request(&mut stream)?;
 
     println!("{:?}", http_request);
+
+    // println!("got client fd: {}", fd);
 
     Ok(())
 }
@@ -157,13 +227,15 @@ fn parse_http_request(stream: &mut impl BufRead) -> Result<HttpRequest> {
             let (method, path, http_version) = parse_request_line(&line)?;
             parsing_http_request.set_request_line(method, path, http_version)
         } else if parsing_http_request.reading_headers() {
-            if line == "\r\n" {
+            println!("line: {}", line);
+            if line.is_empty() {
                 parsing_http_request.read_headers = true;
-                continue;
+                break;
             }
             let (key, value) = parse_header_line(&line)?;
             parsing_http_request.set_header(key, value);
         } else {
+
             // TODO: impl later
         }
     }
